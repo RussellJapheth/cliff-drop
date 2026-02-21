@@ -167,20 +167,19 @@ cd drop
 npm install
 npm run build
 
-# Create data directories
-mkdir -p data storage/files
-
-# Set environment
-export DEFAULT_PASSWORD="your-secure-password"
+# Create data and log directories
+mkdir -p data storage/files logs
 
 # Install PM2 globally
 npm install -g pm2
 
-# Start with PM2
-pm2 start npm --name drop -- start
+# Start with PM2 using ecosystem file
+pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 ```
+
+To configure environment variables (cloud storage, database), edit `ecosystem.config.cjs` or create a `.env` file.
 
 ### Option 3: Direct Node.js
 
@@ -250,6 +249,7 @@ server {
 │   └── hooks.server.ts      # Auth middleware
 ├── static/                  # Static assets & PWA
 ├── server.ts               # Custom WebSocket server
+├── ecosystem.config.cjs    # PM2 ecosystem configuration
 ├── deploy.sh               # Ubuntu deployment script
 ├── drop.service            # Systemd service (with cloud config options)
 └── package.json
