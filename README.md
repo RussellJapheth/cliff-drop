@@ -5,11 +5,11 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 ## Features
 
 - **Text & Link Sharing**: Send plain text or auto-detected URLs
-- **File Uploads**: Drag-and-drop or click to upload (50MB limit)
+- **File Uploads**: Drag-and-drop or click to upload
 - **Multi-File Upload**: Upload multiple files at once, grouped with thumbnail previews
 - **File Preview Modal**: Full-screen preview with swipe navigation between files
 - **Real-time Sync**: WebSocket-based instant updates across all devices
-- **Search & Filter**: Find messages by content, filter by type (text/links/files)
+- **Search & Filter**: Full-text search across all messages in the database, filter by type (text/links/files)
 - **Day Grouping**: Messages organized by date with sticky headers
 - **Lazy Loading**: Chat-style interface loads 10 messages initially, more on scroll up
 - **Secure Auth**: Password-protected with Argon2 hashing and HTTP-only cookies
@@ -268,7 +268,7 @@ POST /api/auth/password  { currentPassword, newPassword }
 ### Messages
 
 ```
-GET    /api/messages         ?before=timestamp&limit=10
+GET    /api/messages         ?before=timestamp&limit=10&query=search&type=text|link|file
 POST   /api/messages         { content }
 DELETE /api/messages         ?id=message_id
 ```

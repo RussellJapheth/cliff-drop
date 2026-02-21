@@ -28,30 +28,17 @@
     // Search and filter state
     let searchQuery = $state("");
     let activeFilter = $state<"all" | "text" | "link" | "file">("all");
+    let isSearching = $state(false);
+    let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    // Filter and search messages
-    let filteredMessages = $derived.by(() => {
-        let result = messages;
+    // Track if we're in search mode (filtering by query or type)
+    let isSearchMode = $derived(
+        searchQuery.trim() !== "" || activeFilter !== "all",
+    );
 
-        // Apply type filter
-        if (activeFilter !== "all") {
-            result = result.filter((m) => m.type === activeFilter);
-        }
-
-        // Apply search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter((m) => {
-                if (m.content && m.content.toLowerCase().includes(query))
-                    return true;
-                if (m.fileName && m.fileName.toLowerCase().includes(query))
-                    return true;
-                return false;
-            });
-        }
-
-        return result;
-    });
+    // In search mode, messages are already filtered from the server
+    // In normal mode, messages are loaded with lazy loading
+    let filteredMessages = $derived(messages);
 
     // Group messages by day
     type MessageOrGroup =
@@ -151,6 +138,64 @@
         connectWebSocket();
     });
 
+    // Watch for search query and filter changes
+    $effect(() => {
+        const query = searchQuery;
+        const filter = activeFilter;
+
+        // Clear any pending search timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        // Debounce the search
+        searchTimeout = setTimeout(() => {
+            performSearch(query, filter);
+        }, 300);
+
+        return () => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+        };
+    });
+
+    async function performSearch(
+        query: string,
+        filter: "all" | "text" | "link" | "file",
+    ) {
+        // If no search criteria, reload normal messages
+        if (!query.trim() && filter === "all") {
+            await loadMessages();
+            return;
+        }
+
+        isSearching = true;
+        try {
+            const params = new URLSearchParams();
+            params.set("limit", "100"); // Get more results for search
+            if (query.trim()) {
+                params.set("query", query.trim());
+            }
+            if (filter !== "all") {
+                params.set("type", filter);
+            }
+
+            const response = await fetch(`/api/messages?${params.toString()}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                messages = data.messages;
+                hasMore = false; // Disable lazy loading in search mode
+                setTimeout(scrollToBottom, 100);
+            }
+        } catch (error) {
+            console.error("Failed to search messages:", error);
+        } finally {
+            isSearching = false;
+        }
+    }
+
     onDestroy(() => {
         if (ws) {
             ws.close();
@@ -173,6 +218,9 @@
                 const data = JSON.parse(event.data);
 
                 if (data.type === "message") {
+                    // Don't add new messages in search mode - they may not match the search
+                    if (isSearchMode) return;
+
                     // Check if user is near bottom before adding message
                     const isNearBottom =
                         feedContainer &&
@@ -234,7 +282,9 @@
     }
 
     async function loadMoreMessages() {
-        if (loadingMore || !hasMore || messages.length === 0) return;
+        // Don't load more when in search mode or conditions not met
+        if (loadingMore || !hasMore || messages.length === 0 || isSearchMode)
+            return;
 
         loadingMore = true;
         const oldestMessage = messages[0];
@@ -629,7 +679,7 @@
                 </div>
             {/if}
 
-            {#if loading}
+            {#if loading || isSearching}
                 <div class="flex items-center justify-center h-64">
                     <div
                         class="w-8 h-8 border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin"

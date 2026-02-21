@@ -1,6 +1,6 @@
 import { db } from './db';
 import { messages, type Message, type NewMessage } from './db/schema';
-import { desc, lt, eq } from 'drizzle-orm';
+import { desc, lt, eq, like, or, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { deleteFile } from './files';
 
@@ -93,6 +93,51 @@ export async function getMessagesBefore(beforeTimestamp: Date, limit: number = P
         .orderBy(desc(messages.createdAt))
         .limit(limit)
         .all();
+    return result.reverse(); // Return in chronological order
+}
+
+export interface SearchOptions {
+    query?: string;
+    type?: 'text' | 'link' | 'file';
+    limit?: number;
+}
+
+export async function searchMessages(options: SearchOptions): Promise<Message[]> {
+    const { query, type, limit = PAGE_SIZE } = options;
+    const conditions = [];
+
+    // Type filter
+    if (type) {
+        conditions.push(eq(messages.type, type));
+    }
+
+    // Search query - match against content and fileName (case-insensitive)
+    if (query && query.trim()) {
+        const searchTerm = `%${query.trim().toLowerCase()}%`;
+        conditions.push(
+            or(
+                sql`LOWER(${messages.content}) LIKE ${searchTerm}`,
+                sql`LOWER(${messages.fileName}) LIKE ${searchTerm}`
+            )
+        );
+    }
+
+    let result;
+    if (conditions.length > 0) {
+        result = await db.select()
+            .from(messages)
+            .where(and(...conditions))
+            .orderBy(desc(messages.createdAt))
+            .limit(limit)
+            .all();
+    } else {
+        result = await db.select()
+            .from(messages)
+            .orderBy(desc(messages.createdAt))
+            .limit(limit)
+            .all();
+    }
+
     return result.reverse(); // Return in chronological order
 }
 

@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import {
     getLatestMessages,
     getMessagesBefore,
+    searchMessages,
     createTextMessage,
     validateContent,
     deleteMessage
@@ -16,10 +17,20 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
     try {
         const before = url.searchParams.get('before');
+        const query = url.searchParams.get('query');
+        const type = url.searchParams.get('type') as 'text' | 'link' | 'file' | null;
         const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
 
         let messages;
-        if (before) {
+
+        // If search query or type filter is provided, use searchMessages
+        if (query || type) {
+            messages = await searchMessages({
+                query: query || undefined,
+                type: type || undefined,
+                limit
+            });
+        } else if (before) {
             const beforeDate = new Date(parseInt(before));
             messages = await getMessagesBefore(beforeDate, limit);
         } else {
