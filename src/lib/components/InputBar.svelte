@@ -1,18 +1,25 @@
 <script lang="ts">
     interface Props {
         onSendText: (content: string) => void;
-        onFileUpload: (
-            file: File,
+        onFilesUpload: (
+            files: File[],
             onProgress: (progress: number) => void,
         ) => Promise<void>;
+        maxFileSize: number;
     }
 
-    let { onSendText, onFileUpload }: Props = $props();
+    let { onSendText, onFilesUpload, maxFileSize }: Props = $props();
+
+    function formatFileSize(bytes: number): string {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
 
     let textContent = $state("");
     let uploading = $state(false);
     let uploadProgress = $state(0);
-    let uploadFileName = $state("");
+    let uploadFileCount = $state(0);
 
     function handleSubmit(event: Event) {
         event.preventDefault();
@@ -30,26 +37,41 @@
         }
     }
 
+    async function processFiles(files: FileList | File[]) {
+        const fileArray = Array.from(files);
+        if (fileArray.length === 0) return;
+
+        // Validate file sizes
+        const oversizedFiles = fileArray.filter((f) => f.size > maxFileSize);
+        if (oversizedFiles.length > 0) {
+            const names = oversizedFiles.map((f) => f.name).join(", ");
+            alert(
+                `File(s) exceed the maximum size of ${formatFileSize(maxFileSize)}: ${names}`,
+            );
+            return;
+        }
+
+        uploading = true;
+        uploadFileCount = fileArray.length;
+        uploadProgress = 0;
+
+        try {
+            await onFilesUpload(fileArray, (progress) => {
+                uploadProgress = progress;
+            });
+        } finally {
+            uploading = false;
+            uploadFileCount = 0;
+            uploadProgress = 0;
+        }
+    }
+
     async function handleFileSelect(event: Event) {
         const target = event.target as HTMLInputElement;
         const files = target.files;
 
         if (files && files.length > 0) {
-            for (const file of Array.from(files)) {
-                uploading = true;
-                uploadFileName = file.name;
-                uploadProgress = 0;
-
-                try {
-                    await onFileUpload(file, (progress) => {
-                        uploadProgress = progress;
-                    });
-                } finally {
-                    uploading = false;
-                    uploadFileName = "";
-                    uploadProgress = 0;
-                }
-            }
+            await processFiles(files);
         }
 
         // Reset input
@@ -64,7 +86,9 @@
             <div class="flex items-center gap-3">
                 <div class="flex-1 min-w-0">
                     <p class="text-sm text-[var(--color-text)] truncate">
-                        {uploadFileName}
+                        Uploading {uploadFileCount} file{uploadFileCount > 1
+                            ? "s"
+                            : ""}...
                     </p>
                     <div
                         class="mt-1 h-1.5 bg-[var(--color-bg)] rounded-full overflow-hidden"

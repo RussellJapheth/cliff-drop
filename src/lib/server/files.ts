@@ -1,9 +1,14 @@
 import { existsSync, mkdirSync, createReadStream, createWriteStream, unlinkSync, statSync } from 'fs';
 import { join, basename, normalize } from 'path';
 import type { Readable } from 'stream';
+import { env } from '$env/dynamic/private';
 
-const STORAGE_PATH = process.env.STORAGE_PATH || './storage/files';
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '52428800'); // 50MB default
+const STORAGE_PATH = env.STORAGE_PATH || './storage/files';
+const DEFAULT_MAX_FILE_SIZE = 52428800; // 50MB default
+
+function getMaxFileSizeValue(): number {
+    return parseInt(env.MAX_FILE_SIZE || String(DEFAULT_MAX_FILE_SIZE));
+}
 
 // Allowed MIME types (add more as needed)
 const ALLOWED_MIME_TYPES = new Set([
@@ -54,11 +59,11 @@ export function validateMimeType(mimeType: string): boolean {
 }
 
 export function validateFileSize(size: number): boolean {
-    return size > 0 && size <= MAX_FILE_SIZE;
+    return size > 0 && size <= getMaxFileSizeValue();
 }
 
 export function getMaxFileSize(): number {
-    return MAX_FILE_SIZE;
+    return getMaxFileSizeValue();
 }
 
 export async function saveFile(fileId: string, buffer: Buffer): Promise<void> {

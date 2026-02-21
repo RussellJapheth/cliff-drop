@@ -25,6 +25,7 @@ export function createTextMessage(content: string): Message {
         id,
         type,
         content,
+        groupId: null,
         createdAt
     };
 
@@ -37,6 +38,7 @@ export function createTextMessage(content: string): Message {
         fileName: null,
         mimeType: null,
         size: null,
+        groupId: null,
         createdAt
     };
 }
@@ -45,7 +47,8 @@ export function createFileMessage(
     fileId: string,
     fileName: string,
     mimeType: string,
-    size: number
+    size: number,
+    groupId: string | null = null
 ): Message {
     const createdAt = new Date();
 
@@ -56,6 +59,7 @@ export function createFileMessage(
         fileName,
         mimeType,
         size,
+        groupId,
         createdAt
     };
 
@@ -68,6 +72,7 @@ export function createFileMessage(
         fileName,
         mimeType,
         size,
+        groupId,
         createdAt
     };
 }

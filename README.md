@@ -6,25 +6,39 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 
 - **Text & Link Sharing**: Send plain text or auto-detected URLs
 - **File Uploads**: Drag-and-drop or click to upload (50MB limit)
+- **Multi-File Upload**: Upload multiple files at once, grouped with thumbnail previews
+- **File Preview Modal**: Full-screen preview with swipe navigation between files
 - **Real-time Sync**: WebSocket-based instant updates across all devices
+- **Search & Filter**: Find messages by content, filter by type (text/links/files)
+- **Day Grouping**: Messages organized by date with sticky headers
 - **Secure Auth**: Password-protected with Argon2 hashing and HTTP-only cookies
 - **PWA Support**: Installable on mobile and desktop
 - **Dark Mode**: Clean, minimal dark theme
-- **Responsive**: Mobile-first design
+- **Responsive**: Mobile-first design with touch-friendly controls
 
 ## Tech Stack
 
-- **Framework**: SvelteKit
-- **Styling**: Tailwind CSS
+- **Framework**: SvelteKit with adapter-node
+- **Styling**: Tailwind CSS v4
 - **Database**: SQLite with Drizzle ORM
 - **Real-time**: Native WebSockets
-- **Auth**: Argon2 password hashing, session cookies
+- **Auth**: Argon2id password hashing, session cookies
+- **Runtime**: Node.js with tsx for TypeScript
+
+## Requirements
+
+- Node.js 20+ (22 recommended)
+- npm or bun
 
 ## Quick Start
 
 ### Development
 
 ```bash
+# Clone the repository
+git clone <your-repo> drop
+cd drop
+
 # Install dependencies
 npm install
 
@@ -32,14 +46,9 @@ npm install
 npm run dev
 ```
 
-### Production (Ubuntu)
+The app will be available at `http://localhost:5173`
 
-```bash
-# Quick deploy with systemd
-sudo ./deploy.sh
-```
-
-Or manually:
+### Production
 
 ```bash
 # Install dependencies
@@ -51,13 +60,25 @@ npm run build
 # Create data directories
 mkdir -p data storage/files
 
+# Set your password (optional, defaults to 'changeme')
+export DEFAULT_PASSWORD="your-secure-password"
+
+# Start the server
+npm start
+```
+
+The app will be available at `http://localhost:3000`
+
+# Create data directories
+mkdir -p data storage/files
+
 # Start the server
 NODE_ENV=production node server.js
 ```
 
 ## Configuration
 
-Environment variables (set in `.env` or container):
+Environment variables (set in `.env` or export before running):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -67,9 +88,9 @@ Environment variables (set in `.env` or container):
 | `MAX_FILE_SIZE` | `52428800` | Max upload size (50MB) |
 | `DEFAULT_PASSWORD` | `changeme` | Initial password |
 
-**Important**: Change the default password after first login via the settings menu.
+**Important**: Change the default password after first login via the settings menu (gear icon).
 
-## Ubuntu Deployment
+## Ubuntu/Linux Deployment
 
 ### Prerequisites
 
@@ -81,23 +102,25 @@ sudo apt update && sudo apt upgrade -y
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# Install build tools (for native modules)
+# Install build tools (for native modules like better-sqlite3 and argon2)
 sudo apt install -y python3 make g++
 ```
 
-### Automated Deployment
+### Option 1: Automated Deployment (systemd)
 
 ```bash
 # Clone the repo
 git clone <your-repo> drop
 cd drop
 
-# Run deploy script (installs Node.js, builds, sets up systemd)
+# Run deploy script (builds app, sets up systemd service)
 chmod +x deploy.sh
 sudo ./deploy.sh
 ```
 
-### Manual Deployment
+The app will run as a systemd service, starting automatically on boot.
+
+### Option 2: Manual Deployment with PM2
 
 ```bash
 # Clone the repo
@@ -113,13 +136,21 @@ mkdir -p data storage/files
 
 # Set environment
 export DEFAULT_PASSWORD="your-secure-password"
-export NODE_ENV=production
 
-# Start with PM2 (recommended)
+# Install PM2 globally
 npm install -g pm2
-pm2 start npx --name drop -- tsx server.ts
+
+# Start with PM2
+pm2 start npm --name drop -- start
 pm2 save
 pm2 startup
+```
+
+### Option 3: Direct Node.js
+
+```bash
+# After building...
+NODE_ENV=production npm start
 ```
 
 ### Nginx Reverse Proxy
@@ -161,7 +192,9 @@ server {
 │   │   ├── components/      # Svelte components
 │   │   │   ├── Header.svelte
 │   │   │   ├── InputBar.svelte
-│   │   │   └── MessageItem.svelte
+│   │   │   ├── MessageItem.svelte
+│   │   │   ├── FileGroupItem.svelte
+│   │   │   └── FilePreviewModal.svelte
 │   │   ├── server/
 │   │   │   ├── db/          # Database schema & init
 │   │   │   ├── auth.ts      # Authentication
@@ -174,13 +207,13 @@ server {
 │   │   │   ├── auth/        # Login/logout/password
 │   │   │   ├── files/[id]/  # File download
 │   │   │   ├── messages/    # Message CRUD
-│   │   │   ├── upload/      # File upload
+│   │   │   ├── upload/      # File upload (supports batch)
 │   │   │   └── ws/          # WebSocket
 │   │   ├── login/           # Login page
 │   │   └── +page.svelte     # Main timeline
 │   └── hooks.server.ts      # Auth middleware
 ├── static/                  # Static assets & PWA
-├── server.js               # Custom WebSocket server
+├── server.ts               # Custom WebSocket server
 ├── deploy.sh               # Ubuntu deployment script
 ├── drop.service            # Systemd service file
 └── package.json

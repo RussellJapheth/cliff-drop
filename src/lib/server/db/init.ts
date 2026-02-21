@@ -14,10 +14,12 @@ export async function initializeDatabase() {
       file_name TEXT,
       mime_type TEXT,
       size INTEGER,
+      group_id TEXT,
       created_at INTEGER NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at);
+    CREATE INDEX IF NOT EXISTS messages_group_id_idx ON messages(group_id);
 
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
@@ -30,6 +32,18 @@ export async function initializeDatabase() {
       password_hash TEXT NOT NULL
     );
   `);
+
+    // Migrate: add group_id column if it doesn't exist
+    try {
+        sqlite.exec(`ALTER TABLE messages ADD COLUMN group_id TEXT`);
+    } catch {
+        // Column already exists, ignore error
+    }
+    try {
+        sqlite.exec(`CREATE INDEX IF NOT EXISTS messages_group_id_idx ON messages(group_id)`);
+    } catch {
+        // Index already exists, ignore error
+    }
 
     // Check if account exists
     const existingAccount = db.select().from(account).get();

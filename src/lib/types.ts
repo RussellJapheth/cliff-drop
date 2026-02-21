@@ -5,5 +5,6 @@ export interface Message {
     fileName: string | null;
     mimeType: string | null;
     size: number | null;
+    groupId: string | null;
     createdAt: string;
 }

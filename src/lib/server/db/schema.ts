@@ -7,9 +7,11 @@ export const messages = sqliteTable('messages', {
     fileName: text('file_name'),
     mimeType: text('mime_type'),
     size: integer('size'),
+    groupId: text('group_id'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 }, (table) => [
-    index('messages_created_at_idx').on(table.createdAt)
+    index('messages_created_at_idx').on(table.createdAt),
+    index('messages_group_id_idx').on(table.groupId)
 ]);
 
 export const sessions = sqliteTable('sessions', {

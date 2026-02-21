@@ -4,9 +4,10 @@
     interface Props {
         message: Message;
         onDelete: (id: string) => void;
+        onPreview?: (message: Message) => void;
     }
 
-    let { message, onDelete }: Props = $props();
+    let { message, onDelete, onPreview }: Props = $props();
 
     let copied = $state(false);
     let showActions = $state(false);
@@ -62,6 +63,12 @@
     function handleDelete() {
         onDelete(message.id);
     }
+
+    function handlePreview() {
+        if (onPreview) {
+            onPreview(message);
+        }
+    }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -92,7 +99,11 @@
             {message.content}
         </a>
     {:else if message.type === "file"}
-        <div class="space-y-2">
+        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+        <div
+            class="space-y-2 {onPreview ? 'cursor-pointer' : ''}"
+            onclick={onPreview ? handlePreview : undefined}
+        >
             {#if isImage()}
                 <img
                     src={`/api/files/${message.id}`}
@@ -213,8 +224,8 @@
 
     <!-- Action buttons -->
     <div
-        class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        class:opacity-100={showActions}
+        class="absolute top-2 right-2 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+        class:md:opacity-100={showActions}
     >
         {#if message.type !== "file"}
             <button

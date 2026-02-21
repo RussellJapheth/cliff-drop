@@ -1,10 +1,17 @@
+import { config } from 'dotenv';
+import { existsSync } from 'fs';
 import { createServer, type IncomingMessage } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Duplex } from 'stream';
 import { handler } from './build/handler.js';
 import { addClient, removeClient } from './src/lib/server/websocket.ts';
 
-const PORT = process.env.PORT || 5000;
+// Load .env if it exists, don't override existing env vars
+if (existsSync('.env')) {
+  config({ override: false });
+}
+
+const PORT = process.env.PORT || 7000;
 
 const server = createServer((req, res) => {
   handler(req, res);

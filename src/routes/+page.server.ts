@@ -1,0 +1,8 @@
+import { getMaxFileSize } from '$lib/server/files';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async () => {
+    return {
+        maxFileSize: getMaxFileSize()
+    };
+};
