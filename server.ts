@@ -1,14 +1,20 @@
 import { config } from 'dotenv';
 import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { createServer, type IncomingMessage } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Duplex } from 'stream';
 import { handler } from './build/handler.js';
 import { addClient, removeClient } from './src/lib/server/websocket.ts';
 
+// Get absolute path to .env file relative to this script
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = join(__dirname, '.env');
+
 // Load .env if it exists, don't override existing env vars
-if (existsSync('.env')) {
-  config({ override: false });
+if (existsSync(envPath)) {
+  config({ path: envPath, override: false });
 }
 
 const PORT = process.env.PORT || 7000;
