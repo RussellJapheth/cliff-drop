@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { v4 as uuidv4 } from 'uuid';
-import { saveFile, validateMimeType, validateFileSize, getMaxFileSize } from '$lib/server/files';
+import { saveFile, validateMimeType, validateFileSize, getMaxFileSize, generateAndSaveThumbnail, canGenerateThumbnail } from '$lib/server/files';
 import { createFileMessage } from '$lib/server/messages';
 import { broadcastMessage } from '$lib/server/websocket';
 import mime from 'mime-types';
@@ -47,8 +47,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             const buffer = Buffer.from(await file.arrayBuffer());
             await saveFile(fileId, buffer, mimeType);
 
-            // Create message record with groupId
-            const message = await createFileMessage(fileId, fileName, mimeType, size, groupId);
+            // Generate thumbnail for images
+            let hasThumbnail = false;
+            if (canGenerateThumbnail(mimeType)) {
+                hasThumbnail = await generateAndSaveThumbnail(fileId, buffer, mimeType);
+            }
+
+            // Create message record with groupId and thumbnail flag
+            const message = await createFileMessage(fileId, fileName, mimeType, size, groupId, hasThumbnail);
             broadcastMessage(message);
             uploadedMessages.push(message);
         }

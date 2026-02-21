@@ -34,11 +34,13 @@
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.995.0",
 		"@libsql/client": "^0.17.0",
+		"@types/sharp": "^0.31.1",
 		"argon2": "^0.44.0",
 		"better-sqlite3": "^12.6.2",
 		"dotenv": "^17.3.1",
 		"drizzle-orm": "^0.45.1",
 		"mime-types": "^3.0.2",
+		"sharp": "^0.34.5",
 		"uuid": "^13.0.0",
 		"ws": "^8.19.0"
 	}

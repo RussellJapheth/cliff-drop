@@ -2,7 +2,7 @@ import { db } from './db';
 import { messages, type Message, type NewMessage } from './db/schema';
 import { desc, lt, eq, like, or, and, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { deleteFile } from './files';
+import { deleteFile, deleteThumbnail } from './files';
 
 const PAGE_SIZE = 50;
 
@@ -39,6 +39,7 @@ export async function createTextMessage(content: string): Promise<Message> {
         mimeType: null,
         size: null,
         groupId: null,
+        hasThumbnail: false,
         createdAt
     };
 }
@@ -48,7 +49,8 @@ export async function createFileMessage(
     fileName: string,
     mimeType: string,
     size: number,
-    groupId: string | null = null
+    groupId: string | null = null,
+    hasThumbnail: boolean = false
 ): Promise<Message> {
     const createdAt = new Date();
 
@@ -60,6 +62,7 @@ export async function createFileMessage(
         mimeType,
         size,
         groupId,
+        hasThumbnail,
         createdAt
     };
 
@@ -73,6 +76,7 @@ export async function createFileMessage(
         mimeType,
         size,
         groupId,
+        hasThumbnail,
         createdAt
     };
 }
@@ -149,12 +153,17 @@ export async function deleteMessage(id: string): Promise<boolean> {
     const message = await getMessage(id);
     if (!message) return false;
 
-    // If it's a file message, delete the file too
+    // If it's a file message, delete the file and thumbnail too
     if (message.type === 'file') {
         try {
             await deleteFile(id);
         } catch {
             // File might not exist, continue with message deletion
+        }
+        try {
+            await deleteThumbnail(id);
+        } catch {
+            // Thumbnail might not exist, continue with message deletion
         }
     }
 

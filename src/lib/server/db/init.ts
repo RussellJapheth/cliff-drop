@@ -16,6 +16,7 @@ export async function initializeDatabase() {
             mime_type TEXT,
             size INTEGER,
             group_id TEXT,
+            has_thumbnail INTEGER DEFAULT 0,
             created_at INTEGER NOT NULL
         )`,
         `CREATE INDEX IF NOT EXISTS messages_created_at_idx ON messages(created_at)`,
@@ -35,6 +36,15 @@ export async function initializeDatabase() {
     if (!isTurso) {
         try {
             await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN group_id TEXT`]);
+        } catch {
+            // Column already exists, ignore error
+        }
+    }
+
+    // Migrate: add has_thumbnail column if it doesn't exist
+    if (!isTurso) {
+        try {
+            await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN has_thumbnail INTEGER DEFAULT 0`]);
         } catch {
             // Column already exists, ignore error
         }

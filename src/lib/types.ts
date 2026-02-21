@@ -7,4 +7,7 @@ export interface Message {
     size: number | null;
     groupId: string | null;
     createdAt: string;
+    hasThumbnail?: boolean;
+    // Client-side only: blob URL for preview during upload
+    localPreviewUrl?: string;
 }

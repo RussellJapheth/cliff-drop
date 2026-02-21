@@ -402,6 +402,7 @@
 
         const formData = new FormData();
         const tempIds: string[] = [];
+        const blobUrls: string[] = [];
         const tempGroupId =
             files.length > 1 ? `temp-group-${Date.now()}` : null;
 
@@ -410,6 +411,13 @@
             formData.append("file", file);
             const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
             tempIds.push(tempId);
+
+            // Create local blob URL for image preview during upload
+            let localPreviewUrl: string | undefined;
+            if (file.type.startsWith("image/")) {
+                localPreviewUrl = URL.createObjectURL(file);
+                blobUrls.push(localPreviewUrl);
+            }
 
             const tempMessage: Message = {
                 id: tempId,
@@ -420,6 +428,7 @@
                 size: file.size,
                 groupId: tempGroupId,
                 createdAt: new Date().toISOString(),
+                localPreviewUrl,
             };
             messages = [...messages, tempMessage];
         }
@@ -439,10 +448,11 @@
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         const data = JSON.parse(xhr.responseText);
-                        // Remove all temp messages
+                        // Remove all temp messages and revoke blob URLs
                         messages = messages.filter(
                             (m) => !tempIds.includes(m.id),
                         );
+                        blobUrls.forEach((url) => URL.revokeObjectURL(url));
                         // Add real messages
                         if (data.messages) {
                             messages = [...messages, ...data.messages];
@@ -462,8 +472,9 @@
             });
         } catch (error) {
             console.error("Upload failed:", error);
-            // Remove temp messages on error
+            // Remove temp messages on error and revoke blob URLs
             messages = messages.filter((m) => !tempIds.includes(m.id));
+            blobUrls.forEach((url) => URL.revokeObjectURL(url));
         }
     }
 

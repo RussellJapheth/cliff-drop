@@ -44,6 +44,19 @@
         return file.mimeType?.startsWith("image/") ?? false;
     }
 
+    function getPreviewUrl(file: Message): string {
+        // Use local blob URL during upload
+        if (file.localPreviewUrl) {
+            return file.localPreviewUrl;
+        }
+        // Use thumbnail if available
+        if (file.hasThumbnail) {
+            return `/api/files/${file.id}/thumbnail`;
+        }
+        // Fallback to original file
+        return `/api/files/${file.id}`;
+    }
+
     function handleDeleteAll() {
         for (const file of files) {
             onDelete(file.id);
@@ -88,7 +101,7 @@
                 >
                     {#if isImage(file)}
                         <img
-                            src={`/api/files/${file.id}`}
+                            src={getPreviewUrl(file)}
                             alt={file.fileName || "Image"}
                             class="w-full h-full object-cover rounded"
                             loading="lazy"

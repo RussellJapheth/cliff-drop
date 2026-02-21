@@ -60,6 +60,19 @@
         return message.mimeType?.startsWith("image/") ?? false;
     }
 
+    function getPreviewUrl(): string {
+        // Use local blob URL during upload
+        if (message.localPreviewUrl) {
+            return message.localPreviewUrl;
+        }
+        // Use thumbnail if available
+        if (message.hasThumbnail) {
+            return `/api/files/${message.id}/thumbnail`;
+        }
+        // Fallback to original file
+        return `/api/files/${message.id}`;
+    }
+
     function handleDelete() {
         onDelete(message.id);
     }
@@ -106,7 +119,7 @@
         >
             {#if isImage()}
                 <img
-                    src={`/api/files/${message.id}`}
+                    src={getPreviewUrl()}
                     alt={message.fileName || "Image"}
                     class="max-w-full max-h-64 rounded-lg object-contain bg-[var(--color-bg)]"
                     loading="lazy"

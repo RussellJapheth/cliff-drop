@@ -3,9 +3,13 @@ import { join, basename, normalize } from 'path';
 import { Readable } from 'stream';
 import { env } from '$env/dynamic/private';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 
 const STORAGE_PATH = env.STORAGE_PATH || './storage/files';
+const THUMBNAIL_PATH = env.THUMBNAIL_PATH || './storage/thumbnails';
 const DEFAULT_MAX_FILE_SIZE = 52428800; // 50MB default
+const THUMBNAIL_WIDTH = 400;
+const THUMBNAIL_HEIGHT = 400;
 
 // S3 Configuration
 function isS3Configured(): boolean {
@@ -74,6 +78,12 @@ export function ensureStorageDirectory(): void {
     }
 }
 
+export function ensureThumbnailDirectory(): void {
+    if (!existsSync(THUMBNAIL_PATH)) {
+        mkdirSync(THUMBNAIL_PATH, { recursive: true });
+    }
+}
+
 export function getFilePath(fileId: string): string {
     // Prevent directory traversal
     const safeId = basename(fileId);
@@ -81,6 +91,19 @@ export function getFilePath(fileId: string): string {
 
     // Ensure path stays within storage directory
     if (!normalizedPath.startsWith(normalize(STORAGE_PATH))) {
+        throw new Error('Invalid file path');
+    }
+
+    return normalizedPath;
+}
+
+export function getThumbnailPath(fileId: string): string {
+    // Prevent directory traversal
+    const safeId = basename(fileId);
+    const normalizedPath = normalize(join(THUMBNAIL_PATH, safeId));
+
+    // Ensure path stays within thumbnail directory
+    if (!normalizedPath.startsWith(normalize(THUMBNAIL_PATH))) {
         throw new Error('Invalid file path');
     }
 
@@ -200,6 +223,123 @@ export async function fileExists(fileId: string): Promise<boolean> {
             return existsSync(filePath);
         } catch {
             return false;
+        }
+    }
+}
+
+// Thumbnail functions
+const THUMBNAIL_SUPPORTED_TYPES = new Set([
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'
+]);
+
+export function canGenerateThumbnail(mimeType: string): boolean {
+    return THUMBNAIL_SUPPORTED_TYPES.has(mimeType);
+}
+
+export async function generateAndSaveThumbnail(fileId: string, buffer: Buffer, mimeType: string): Promise<boolean> {
+    if (!canGenerateThumbnail(mimeType)) {
+        return false;
+    }
+
+    try {
+        const thumbnailBuffer = await sharp(buffer)
+            .rotate() // Auto-rotate based on EXIF orientation
+            .resize(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, {
+                fit: 'inside',
+                withoutEnlargement: true
+            })
+            .jpeg({ quality: 80 })
+            .toBuffer();
+
+        if (isS3Configured()) {
+            const safeId = basename(fileId);
+            await getS3Client().send(new PutObjectCommand({
+                Bucket: getS3Bucket(),
+                Key: `thumb-${safeId}`,
+                Body: thumbnailBuffer,
+                ContentType: 'image/jpeg'
+            }));
+        } else {
+            ensureThumbnailDirectory();
+            const thumbnailPath = getThumbnailPath(fileId);
+
+            await new Promise<void>((resolve, reject) => {
+                const writeStream = createWriteStream(thumbnailPath);
+                writeStream.write(thumbnailBuffer);
+                writeStream.end();
+                writeStream.on('finish', resolve);
+                writeStream.on('error', reject);
+            });
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Failed to generate thumbnail:', error);
+        return false;
+    }
+}
+
+export async function getThumbnailStream(fileId: string): Promise<Readable> {
+    if (isS3Configured()) {
+        const safeId = basename(fileId);
+        const response = await getS3Client().send(new GetObjectCommand({
+            Bucket: getS3Bucket(),
+            Key: `thumb-${safeId}`
+        }));
+
+        if (!response.Body) {
+            throw new Error('Thumbnail not found');
+        }
+
+        return response.Body as Readable;
+    } else {
+        const thumbnailPath = getThumbnailPath(fileId);
+
+        if (!existsSync(thumbnailPath)) {
+            throw new Error('Thumbnail not found');
+        }
+
+        return createReadStream(thumbnailPath);
+    }
+}
+
+export async function thumbnailExists(fileId: string): Promise<boolean> {
+    if (isS3Configured()) {
+        try {
+            const safeId = basename(fileId);
+            await getS3Client().send(new HeadObjectCommand({
+                Bucket: getS3Bucket(),
+                Key: `thumb-${safeId}`
+            }));
+            return true;
+        } catch {
+            return false;
+        }
+    } else {
+        try {
+            const thumbnailPath = getThumbnailPath(fileId);
+            return existsSync(thumbnailPath);
+        } catch {
+            return false;
+        }
+    }
+}
+
+export async function deleteThumbnail(fileId: string): Promise<void> {
+    if (isS3Configured()) {
+        try {
+            const safeId = basename(fileId);
+            await getS3Client().send(new DeleteObjectCommand({
+                Bucket: getS3Bucket(),
+                Key: `thumb-${safeId}`
+            }));
+        } catch {
+            // Ignore if thumbnail doesn't exist
+        }
+    } else {
+        const thumbnailPath = getThumbnailPath(fileId);
+        if (existsSync(thumbnailPath)) {
+            unlinkSync(thumbnailPath);
         }
     }
 }

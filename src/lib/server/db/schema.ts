@@ -8,6 +8,7 @@ export const messages = sqliteTable('messages', {
     mimeType: text('mime_type'),
     size: integer('size'),
     groupId: text('group_id'),
+    hasThumbnail: integer('has_thumbnail', { mode: 'boolean' }).default(false),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 }, (table) => [
     index('messages_created_at_idx').on(table.createdAt),
