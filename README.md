@@ -149,6 +149,13 @@ sudo ./deploy.sh
 
 The app will run as a systemd service, starting automatically on boot.
 
+To configure cloud storage (S3) or database (Turso), edit `/etc/systemd/system/drop.service` and uncomment the relevant environment variables, then restart:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart drop
+```
+
 ### Option 2: Manual Deployment with PM2
 
 ```bash
@@ -244,7 +251,7 @@ server {
 ├── static/                  # Static assets & PWA
 ├── server.ts               # Custom WebSocket server
 ├── deploy.sh               # Ubuntu deployment script
-├── drop.service            # Systemd service file
+├── drop.service            # Systemd service (with cloud config options)
 └── package.json
 ```
 
@@ -261,7 +268,7 @@ POST /api/auth/password  { currentPassword, newPassword }
 ### Messages
 
 ```
-GET    /api/messages         ?before=timestamp&limit=50
+GET    /api/messages         ?before=timestamp&limit=10
 POST   /api/messages         { content }
 DELETE /api/messages         ?id=message_id
 ```

@@ -16,6 +16,18 @@ Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=DATABASE_PATH=/opt/drop/data/drop.db
 Environment=STORAGE_PATH=/opt/drop/storage/files
+Environment=MAX_FILE_SIZE=52428800
+
+# Optional: Turso database (comment out DATABASE_PATH if using Turso)
+# Environment=TURSO_DATABASE_URL=libsql://your-db.turso.io
+# Environment=TURSO_AUTH_TOKEN=your-token
+
+# Optional: S3 storage (comment out STORAGE_PATH if using S3)
+# Environment=S3_BUCKET=your-bucket
+# Environment=S3_REGION=us-east-1
+# Environment=S3_ACCESS_KEY_ID=your-key
+# Environment=S3_SECRET_ACCESS_KEY=your-secret
+# Environment=S3_ENDPOINT=https://s3.amazonaws.com
 
 # Security hardening
 NoNewPrivileges=true
