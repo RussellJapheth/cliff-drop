@@ -25,12 +25,12 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 - **Storage**: Local filesystem or S3-compatible
 - **Real-time**: Native WebSockets
 - **Auth**: Argon2id password hashing, session cookies
-- **Runtime**: Node.js with tsx for TypeScript
+- **Runtime**: Node.js with tsx for TypeScript (tsx not need for newer node versions which now natively support typescript files)
 
 ## Requirements
 
 - Node.js 20+ (22 recommended)
-- npm or bun
+- npm
 
 ## Quick Start
 
