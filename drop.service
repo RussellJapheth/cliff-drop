@@ -1,0 +1,28 @@
+[Unit]
+Description=Drop - Cross-device sharing
+After=network.target
+
+[Service]
+Type=simple
+User=drop
+Group=drop
+WorkingDirectory=/opt/drop
+ExecStart=/usr/bin/npx tsx server.ts
+Restart=on-failure
+RestartSec=10
+
+# Environment
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=DATABASE_PATH=/opt/drop/data/drop.db
+Environment=STORAGE_PATH=/opt/drop/storage/files
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/drop/data /opt/drop/storage
+
+[Install]
+WantedBy=multi-user.target
