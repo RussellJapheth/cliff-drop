@@ -11,6 +11,7 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 - **Real-time Sync**: WebSocket-based instant updates across all devices
 - **Search & Filter**: Find messages by content, filter by type (text/links/files)
 - **Day Grouping**: Messages organized by date with sticky headers
+- **Lazy Loading**: Chat-style interface loads 10 messages initially, more on scroll up
 - **Secure Auth**: Password-protected with Argon2 hashing and HTTP-only cookies
 - **PWA Support**: Installable on mobile and desktop
 - **Dark Mode**: Clean, minimal dark theme

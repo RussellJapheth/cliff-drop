@@ -173,13 +173,24 @@
                 const data = JSON.parse(event.data);
 
                 if (data.type === "message") {
+                    // Check if user is near bottom before adding message
+                    const isNearBottom =
+                        feedContainer &&
+                        feedContainer.scrollHeight -
+                            feedContainer.scrollTop -
+                            feedContainer.clientHeight <
+                            100;
+
                     // Add new message if not already present (optimistic update)
                     const exists = messages.some(
                         (m) => m.id === data.payload.id,
                     );
                     if (!exists) {
                         messages = [...messages, data.payload];
-                        scrollToBottom();
+                        // Only scroll to bottom if user was already at bottom
+                        if (isNearBottom) {
+                            setTimeout(scrollToBottom, 0);
+                        }
                     }
                 } else if (data.type === "delete") {
                     messages = messages.filter((m) => m.id !== data.payload.id);
@@ -206,12 +217,12 @@
     async function loadMessages() {
         loading = true;
         try {
-            const response = await fetch("/api/messages");
+            const response = await fetch("/api/messages?limit=10");
             const data = await response.json();
 
             if (response.ok) {
                 messages = data.messages;
-                hasMore = data.messages.length >= 50;
+                hasMore = data.messages.length >= 10;
                 // Wait for DOM update then scroll
                 setTimeout(scrollToBottom, 100);
             }
@@ -229,15 +240,31 @@
         const oldestMessage = messages[0];
         const before = new Date(oldestMessage.createdAt).getTime();
 
+        // Store current scroll state to preserve position after prepending
+        const previousScrollHeight = feedContainer?.scrollHeight || 0;
+        const previousScrollTop = feedContainer?.scrollTop || 0;
+
         try {
-            const response = await fetch(`/api/messages?before=${before}`);
+            const response = await fetch(
+                `/api/messages?before=${before}&limit=10`,
+            );
             const data = await response.json();
 
             if (response.ok) {
                 if (data.messages.length > 0) {
                     messages = [...data.messages, ...messages];
+
+                    // Restore scroll position after DOM update
+                    setTimeout(() => {
+                        if (feedContainer) {
+                            const newScrollHeight = feedContainer.scrollHeight;
+                            feedContainer.scrollTop =
+                                previousScrollTop +
+                                (newScrollHeight - previousScrollHeight);
+                        }
+                    }, 0);
                 }
-                hasMore = data.messages.length >= 50;
+                hasMore = data.messages.length >= 10;
             }
         } catch (error) {
             console.error("Failed to load more messages:", error);
@@ -370,6 +397,8 @@
                         if (data.messages) {
                             messages = [...messages, ...data.messages];
                         }
+                        // Scroll to show new messages
+                        setTimeout(scrollToBottom, 0);
                         resolve();
                     } else {
                         reject(new Error("Upload failed"));
