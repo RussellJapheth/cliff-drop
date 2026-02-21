@@ -16,7 +16,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
             return json({ error: 'Invalid password' }, { status: 401 });
         }
 
-        const { sessionId, expiresAt } = createSession();
+        const { sessionId, expiresAt } = await createSession();
         setSessionCookie(cookies, sessionId, expiresAt);
 
         return json({ success: true });

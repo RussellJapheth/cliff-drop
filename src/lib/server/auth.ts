@@ -1,6 +1,6 @@
 import { db } from './db';
 import { account, sessions } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, lt } from 'drizzle-orm';
 import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import type { Cookies } from '@sveltejs/kit';
@@ -9,7 +9,7 @@ const SESSION_COOKIE_NAME = 'session';
 const SESSION_DURATION_DAYS = 30;
 
 export async function verifyPassword(password: string): Promise<boolean> {
-    const acc = db.select().from(account).where(eq(account.id, 1)).get();
+    const acc = await db.select().from(account).where(eq(account.id, 1)).get();
     if (!acc) return false;
 
     try {
@@ -27,17 +27,17 @@ export async function changePassword(newPassword: string): Promise<void> {
         parallelism: 4
     });
 
-    db.update(account)
+    await db.update(account)
         .set({ passwordHash })
         .where(eq(account.id, 1))
         .run();
 }
 
-export function createSession(): { sessionId: string; expiresAt: Date } {
+export async function createSession(): Promise<{ sessionId: string; expiresAt: Date }> {
     const sessionId = uuidv4();
     const expiresAt = new Date(Date.now() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
 
-    db.insert(sessions).values({
+    await db.insert(sessions).values({
         id: sessionId,
         expiresAt,
         createdAt: new Date()
@@ -46,27 +46,27 @@ export function createSession(): { sessionId: string; expiresAt: Date } {
     return { sessionId, expiresAt };
 }
 
-export function validateSession(sessionId: string): boolean {
-    const session = db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
+export async function validateSession(sessionId: string): Promise<boolean> {
+    const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
 
     if (!session) return false;
 
     if (session.expiresAt < new Date()) {
         // Session expired, delete it
-        db.delete(sessions).where(eq(sessions.id, sessionId)).run();
+        await db.delete(sessions).where(eq(sessions.id, sessionId)).run();
         return false;
     }
 
     return true;
 }
 
-export function deleteSession(sessionId: string): void {
-    db.delete(sessions).where(eq(sessions.id, sessionId)).run();
+export async function deleteSession(sessionId: string): Promise<void> {
+    await db.delete(sessions).where(eq(sessions.id, sessionId)).run();
 }
 
-export function cleanExpiredSessions(): void {
+export async function cleanExpiredSessions(): Promise<void> {
     const now = new Date();
-    db.delete(sessions).where(eq(sessions.expiresAt, now)).run();
+    await db.delete(sessions).where(lt(sessions.expiresAt, now)).run();
 }
 
 export function setSessionCookie(cookies: Cookies, sessionId: string, expiresAt: Date): void {
@@ -87,8 +87,8 @@ export function clearSessionCookie(cookies: Cookies): void {
     cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
 }
 
-export function isAuthenticated(cookies: Cookies): boolean {
+export async function isAuthenticated(cookies: Cookies): Promise<boolean> {
     const sessionId = getSessionFromCookies(cookies);
     if (!sessionId) return false;
-    return validateSession(sessionId);
+    return await validateSession(sessionId);
 }

@@ -6,8 +6,8 @@ import { deleteFile } from './files';
 
 const PAGE_SIZE = 50;
 
-// URL regex pattern
-const URL_PATTERN = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+// URL regex pattern - matches URLs with optional protocol, query strings and hashes
+const URL_PATTERN = /^(https?:\/\/)?([\da-z][\da-z\.-]*[\da-z])\.([a-z]{2,})(\/[^\s]*)?$/i;
 
 export function detectMessageType(content: string): 'text' | 'link' {
     if (URL_PATTERN.test(content.trim())) {
@@ -16,7 +16,7 @@ export function detectMessageType(content: string): 'text' | 'link' {
     return 'text';
 }
 
-export function createTextMessage(content: string): Message {
+export async function createTextMessage(content: string): Promise<Message> {
     const type = detectMessageType(content);
     const id = uuidv4();
     const createdAt = new Date();
@@ -29,7 +29,7 @@ export function createTextMessage(content: string): Message {
         createdAt
     };
 
-    db.insert(messages).values(newMessage).run();
+    await db.insert(messages).values(newMessage).run();
 
     return {
         id,
@@ -43,13 +43,13 @@ export function createTextMessage(content: string): Message {
     };
 }
 
-export function createFileMessage(
+export async function createFileMessage(
     fileId: string,
     fileName: string,
     mimeType: string,
     size: number,
     groupId: string | null = null
-): Message {
+): Promise<Message> {
     const createdAt = new Date();
 
     const newMessage: NewMessage = {
@@ -63,7 +63,7 @@ export function createFileMessage(
         createdAt
     };
 
-    db.insert(messages).values(newMessage).run();
+    await db.insert(messages).values(newMessage).run();
 
     return {
         id: fileId,
@@ -77,43 +77,43 @@ export function createFileMessage(
     };
 }
 
-export function getLatestMessages(limit: number = PAGE_SIZE): Message[] {
-    return db.select()
+export async function getLatestMessages(limit: number = PAGE_SIZE): Promise<Message[]> {
+    const result = await db.select()
         .from(messages)
         .orderBy(desc(messages.createdAt))
         .limit(limit)
-        .all()
-        .reverse(); // Return in chronological order
+        .all();
+    return result.reverse(); // Return in chronological order
 }
 
-export function getMessagesBefore(beforeTimestamp: Date, limit: number = PAGE_SIZE): Message[] {
-    return db.select()
+export async function getMessagesBefore(beforeTimestamp: Date, limit: number = PAGE_SIZE): Promise<Message[]> {
+    const result = await db.select()
         .from(messages)
         .where(lt(messages.createdAt, beforeTimestamp))
         .orderBy(desc(messages.createdAt))
         .limit(limit)
-        .all()
-        .reverse(); // Return in chronological order
+        .all();
+    return result.reverse(); // Return in chronological order
 }
 
-export function getMessage(id: string): Message | undefined {
-    return db.select().from(messages).where(eq(messages.id, id)).get();
+export async function getMessage(id: string): Promise<Message | undefined> {
+    return await db.select().from(messages).where(eq(messages.id, id)).get();
 }
 
-export function deleteMessage(id: string): boolean {
-    const message = getMessage(id);
+export async function deleteMessage(id: string): Promise<boolean> {
+    const message = await getMessage(id);
     if (!message) return false;
 
     // If it's a file message, delete the file too
     if (message.type === 'file') {
         try {
-            deleteFile(id);
+            await deleteFile(id);
         } catch {
             // File might not exist, continue with message deletion
         }
     }
 
-    db.delete(messages).where(eq(messages.id, id)).run();
+    await db.delete(messages).where(eq(messages.id, id)).run();
     return true;
 }
 

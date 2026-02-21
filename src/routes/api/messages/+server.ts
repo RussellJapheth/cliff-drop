@@ -21,9 +21,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
         let messages;
         if (before) {
             const beforeDate = new Date(parseInt(before));
-            messages = getMessagesBefore(beforeDate, limit);
+            messages = await getMessagesBefore(beforeDate, limit);
         } else {
-            messages = getLatestMessages(limit);
+            messages = await getLatestMessages(limit);
         }
 
         return json({ messages });
@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             return json({ error: 'Content must be between 1 and 10000 characters' }, { status: 400 });
         }
 
-        const message = createTextMessage(trimmedContent);
+        const message = await createTextMessage(trimmedContent);
         broadcastMessage(message);
 
         return json({ message });
@@ -73,7 +73,7 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
             return json({ error: 'Message ID is required' }, { status: 400 });
         }
 
-        const deleted = deleteMessage(id);
+        const deleted = await deleteMessage(id);
 
         if (!deleted) {
             return json({ error: 'Message not found' }, { status: 404 });

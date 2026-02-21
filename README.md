@@ -20,7 +20,8 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 
 - **Framework**: SvelteKit with adapter-node
 - **Styling**: Tailwind CSS v4
-- **Database**: SQLite with Drizzle ORM
+- **Database**: SQLite with Drizzle ORM (local or Turso)
+- **Storage**: Local filesystem or S3-compatible
 - **Real-time**: Native WebSockets
 - **Auth**: Argon2id password hashing, session cookies
 - **Runtime**: Node.js with tsx for TypeScript
@@ -80,13 +81,40 @@ NODE_ENV=production node server.js
 
 Environment variables (set in `.env` or export before running):
 
+### Core Settings
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Server port |
-| `DATABASE_PATH` | `./data/drop.db` | SQLite database path |
-| `STORAGE_PATH` | `./storage/files` | File storage directory |
+| `DATABASE_PATH` | `./data/drop.db` | Local SQLite database path |
+| `STORAGE_PATH` | `./storage/files` | Local file storage directory |
 | `MAX_FILE_SIZE` | `52428800` | Max upload size (50MB) |
 | `DEFAULT_PASSWORD` | `changeme` | Initial password |
+
+### Turso Database (Optional)
+
+For edge-hosted SQLite, configure [Turso](https://turso.tech):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TURSO_DATABASE_URL` | - | Turso database URL (e.g., `libsql://db-name.turso.io`) |
+| `TURSO_AUTH_TOKEN` | - | Turso auth token |
+
+If Turso is not configured, data is stored locally at `DATABASE_PATH`.
+
+### S3 Storage (Optional)
+
+For cloud storage, configure S3 or any S3-compatible service (MinIO, Backblaze B2, Cloudflare R2, etc.):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `S3_BUCKET` | - | S3 bucket name (required for S3) |
+| `S3_REGION` | `us-east-1` | AWS region |
+| `S3_ACCESS_KEY_ID` | - | AWS access key ID |
+| `S3_SECRET_ACCESS_KEY` | - | AWS secret access key |
+| `S3_ENDPOINT` | - | Custom endpoint for S3-compatible services |
+
+If `S3_BUCKET` is not set, files are stored locally at `STORAGE_PATH`.
 
 **Important**: Change the default password after first login via the settings menu (gear icon).
 

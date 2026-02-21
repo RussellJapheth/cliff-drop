@@ -146,8 +146,8 @@
                     onkeydown={handleKeyDown}
                     placeholder="Drop text, link, or file..."
                     rows="1"
-                    class="w-full px-4 py-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent min-h-[48px] max-h-32"
-                    style="field-sizing: content;"
+                    class="w-full px-4 py-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent min-h-[48px] max-h-32 overflow-x-hidden break-all"
+                    style="field-sizing: content; overflow-wrap: anywhere;"
                 ></textarea>
             </div>
 

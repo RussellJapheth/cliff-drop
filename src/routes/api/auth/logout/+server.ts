@@ -6,7 +6,7 @@ export const POST: RequestHandler = async ({ cookies }) => {
     const sessionId = getSessionFromCookies(cookies);
 
     if (sessionId) {
-        deleteSession(sessionId);
+        await deleteSession(sessionId);
     }
 
     clearSessionCookie(cookies);

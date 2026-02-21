@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         const { id } = params;
 
         // Get message metadata
-        const message = getMessage(id);
+        const message = await getMessage(id);
 
         if (!message) {
             throw error(404, 'File not found');
@@ -24,12 +24,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         }
 
         // Check file exists
-        if (!fileExists(id)) {
+        if (!(await fileExists(id))) {
             throw error(404, 'File not found on disk');
         }
 
         // Stream the file
-        const stream = getFileStream(id);
+        const stream = await getFileStream(id);
         const webStream = Readable.toWeb(stream) as ReadableStream<Uint8Array>;
 
         return new Response(webStream, {

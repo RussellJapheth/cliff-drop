@@ -45,10 +45,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
             // Save file to storage
             const buffer = Buffer.from(await file.arrayBuffer());
-            await saveFile(fileId, buffer);
+            await saveFile(fileId, buffer, mimeType);
 
             // Create message record with groupId
-            const message = createFileMessage(fileId, fileName, mimeType, size, groupId);
+            const message = await createFileMessage(fileId, fileName, mimeType, size, groupId);
             broadcastMessage(message);
             uploadedMessages.push(message);
         }

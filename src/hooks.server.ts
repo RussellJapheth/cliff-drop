@@ -21,7 +21,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
     // Check authentication for protected routes
     const isPublic = PUBLIC_PATHS.some(p => path === p || path.startsWith(p));
-    const authenticated = isAuthenticated(event.cookies);
+    const authenticated = await isAuthenticated(event.cookies);
 
     // Set auth state for use in routes
     event.locals.authenticated = authenticated;
