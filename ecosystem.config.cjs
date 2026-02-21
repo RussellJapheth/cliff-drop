@@ -2,9 +2,9 @@ module.exports = {
     apps: [
         {
             name: "drop",
-            script: "./build/index.ts",
+            script: "./build/index.js",
             interpreter: "node",
-            interpreter_args: "--import tsx --env-file=.env",
+            interpreter_args: "--env-file=.env",
             env: {
                 NODE_ENV: "production",
                 PORT: 3500,
