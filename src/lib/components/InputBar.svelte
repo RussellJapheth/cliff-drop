@@ -198,7 +198,9 @@
     }
 </script>
 
-<div class="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+<div
+    class="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-surface)]"
+>
     <!-- Upload progress -->
     {#if uploading}
         <div class="px-4 py-2 border-b border-[var(--color-border)]">

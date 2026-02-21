@@ -679,7 +679,7 @@
     <div
         bind:this={feedContainer}
         onscroll={handleScroll}
-        class="flex-1 overflow-y-auto px-4 py-4"
+        class="flex-1 overflow-y-auto px-4 py-4 pb-24"
     >
         <div class="max-w-2xl mx-auto space-y-3">
             {#if loadingMore}
@@ -776,7 +776,7 @@
             {/if}
         </div>
     </div>
-
+    <!-- <div class="h-28">&nbsp;</div> -->
     <!-- Input bar -->
     <InputBar
         onSendText={handleSendText}
