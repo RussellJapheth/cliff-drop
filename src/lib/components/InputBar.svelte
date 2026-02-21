@@ -77,6 +77,125 @@
         // Reset input
         target.value = "";
     }
+
+    async function handlePaste(event: ClipboardEvent) {
+        const clipboard = event.clipboardData;
+        if (!clipboard) return;
+
+        // Detect image types in the clipboard (helps on mobile)
+        const types = Array.from(clipboard.types || []);
+        const hasImageType = types.some((t) => t.startsWith("image/"));
+
+        // Collect any file items (images) from the clipboard
+        const pastedFiles: File[] = [];
+        for (const item of Array.from(clipboard.items)) {
+            if (item.kind === "file") {
+                const file = item.getAsFile();
+                if (file) pastedFiles.push(file);
+            }
+        }
+
+        // If there are image types but no File objects, try the async clipboard read() API
+        if (
+            hasImageType &&
+            pastedFiles.length === 0 &&
+            (navigator as any).clipboard?.read
+        ) {
+            try {
+                const items: any[] = await (navigator as any).clipboard.read();
+                for (const it of items) {
+                    for (const type of it.types || []) {
+                        if (type.startsWith("image/")) {
+                            try {
+                                const blob: Blob = await it.getType(type);
+                                const ext = (
+                                    blob.type.split("/")[1] || "png"
+                                ).split(";")[0];
+                                pastedFiles.push(
+                                    new File([blob], `pasted-image.${ext}`, {
+                                        type: blob.type,
+                                    }),
+                                );
+                            } catch (e) {
+                                // ignore this type
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // read() may be unsupported or blocked by permissions on mobile — ignore
+            }
+        }
+
+        if (pastedFiles.length > 0) {
+            event.preventDefault();
+            await processFiles(pastedFiles);
+            return;
+        }
+
+        // Fallback: look for an <img src="data:..."> in HTML clipboard data
+        const html = clipboard.getData("text/html");
+        if (html) {
+            const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (match) {
+                const src = match[1];
+                try {
+                    if (src.startsWith("data:")) {
+                        const res = await fetch(src);
+                        const blob = await res.blob();
+                        const ext = (blob.type.split("/")[1] || "png").split(
+                            ";",
+                        )[0];
+                        const file = new File([blob], `pasted-image.${ext}`, {
+                            type: blob.type,
+                        });
+                        event.preventDefault();
+                        await processFiles([file]);
+                        return;
+                    } else if (/^https?:\/\//i.test(src)) {
+                        const res = await fetch(src);
+                        const blob = await res.blob();
+                        const ext = (blob.type.split("/")[1] || "png").split(
+                            ";",
+                        )[0];
+                        const file = new File([blob], `pasted-image.${ext}`, {
+                            type: blob.type,
+                        });
+                        event.preventDefault();
+                        await processFiles([file]);
+                        return;
+                    }
+                } catch (e) {
+                    // ignore fetch errors and allow normal paste behavior
+                }
+            }
+        }
+
+        // As a final fallback, check plain text for an image URL
+        const text = clipboard.getData("text/plain");
+        if (text) {
+            const urlMatch = text.match(
+                /https?:\/\/\S+\.(?:png|jpe?g|gif|webp|bmp)/i,
+            );
+            if (urlMatch) {
+                try {
+                    const res = await fetch(urlMatch[0]);
+                    const blob = await res.blob();
+                    const ext = (blob.type.split("/")[1] || "png").split(
+                        ";",
+                    )[0];
+                    const file = new File([blob], `pasted-image.${ext}`, {
+                        type: blob.type,
+                    });
+                    event.preventDefault();
+                    await processFiles([file]);
+                    return;
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+    }
 </script>
 
 <div class="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -142,6 +261,7 @@
                 class="flex-1 relative flex flex-row items-center justify-center"
             >
                 <textarea
+                    onpaste={handlePaste}
                     bind:value={textContent}
                     onkeydown={handleKeyDown}
                     placeholder="Drop text, link, or file..."
