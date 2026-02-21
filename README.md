@@ -6,6 +6,7 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 
 - **Text & Link Sharing**: Send plain text or auto-detected URLs
 - **File Uploads**: Drag-and-drop or click to upload
+- **Clipboard Paste**: Paste images directly from clipboard
 - **Multi-File Upload**: Upload multiple files at once, grouped with thumbnail previews
 - **Thumbnail Generation**: Automatic thumbnail creation for images using sharp with EXIF orientation support
 - **File Preview Modal**: Full-screen preview with swipe navigation between files
