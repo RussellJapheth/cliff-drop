@@ -7,6 +7,7 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 - **Text & Link Sharing**: Send plain text or auto-detected URLs
 - **File Uploads**: Drag-and-drop or click to upload
 - **Multi-File Upload**: Upload multiple files at once, grouped with thumbnail previews
+- **Thumbnail Generation**: Automatic thumbnail creation for images using sharp with EXIF orientation support
 - **File Preview Modal**: Full-screen preview with swipe navigation between files
 - **Real-time Sync**: WebSocket-based instant updates across all devices
 - **Search & Filter**: Full-text search across all messages in the database, filter by type (text/links/files)
@@ -25,6 +26,7 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 - **Storage**: Local filesystem or S3-compatible
 - **Real-time**: Native WebSockets
 - **Auth**: Argon2id password hashing, session cookies
+- **Images**: sharp for thumbnail generation with auto-rotation
 - **Runtime**: Node.js with tsx for TypeScript (tsx not need for newer node versions which now natively support typescript files)
 
 ## Requirements
