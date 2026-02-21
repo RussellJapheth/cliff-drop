@@ -38,7 +38,7 @@ A self-hosted, cross-device text and file sharing web app inspired by Microsoft 
 
 ```bash
 # Clone the repository
-git clone <your-repo> drop
+git clone https://github.com/RussellJapheth/cliff-drop.git drop
 cd drop
 
 # Install dependencies
