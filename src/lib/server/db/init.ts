@@ -32,22 +32,18 @@ export async function initializeDatabase() {
         )`
     ]);
 
-    // Migrate: add group_id column if it doesn't exist (only for local SQLite)
-    if (!isTurso) {
-        try {
-            await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN group_id TEXT`]);
-        } catch {
-            // Column already exists, ignore error
-        }
+    // Migrate: add group_id column if it doesn't exist
+    try {
+        await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN group_id TEXT`]);
+    } catch {
+        // Column already exists, ignore error
     }
 
     // Migrate: add has_thumbnail column if it doesn't exist
-    if (!isTurso) {
-        try {
-            await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN has_thumbnail INTEGER DEFAULT 0`]);
-        } catch {
-            // Column already exists, ignore error
-        }
+    try {
+        await execRawSqlBatch([`ALTER TABLE messages ADD COLUMN has_thumbnail INTEGER DEFAULT 0`]);
+    } catch {
+        // Column already exists, ignore error
     }
 
     // Check if account exists
