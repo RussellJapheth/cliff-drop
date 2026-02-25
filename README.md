@@ -2,6 +2,8 @@
 
 A self-hosted, cross-device text and file sharing web app inspired by Microsoft Edge Drop. Single-user, minimal, and secure.
 
+![Screenshot](static/screenshot.png)
+
 ## Features
 
 - **Text & Link Sharing**: Send plain text or auto-detected URLs
