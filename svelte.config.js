@@ -1,4 +1,8 @@
 import adapter from "@sveltejs/adapter-node";
+import { config as dotenvConfig } from "dotenv";
+
+// Load environment variables so we can access ORIGIN
+dotenvConfig();
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,7 +11,7 @@ const config = {
             out: "build",
         }),
         csrf: {
-            checkOrigin: false,
+            trustedOrigins: process.env.ORIGIN ? [process.env.ORIGIN] : [],
         },
     },
 };

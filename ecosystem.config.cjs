@@ -9,6 +9,7 @@ module.exports = {
                 NODE_ENV: "production",
                 PORT: 3500,
                 BODY_SIZE_LIMIT: "5G",
+                ORIGIN: process.env.ORIGIN,
             },
             instances: 1,
             exec_mode: "fork",
