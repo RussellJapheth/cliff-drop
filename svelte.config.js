@@ -6,10 +6,9 @@ const config = {
         adapter: adapter({
             out: "build",
         }),
-    },
-    csrf: {
-        // Allow all origins for self-hosted single-user app
-        trustedOrigins: ["*"],
+        csrf: {
+            checkOrigin: false,
+        },
     },
 };
 
