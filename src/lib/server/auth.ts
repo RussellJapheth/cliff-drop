@@ -70,12 +70,14 @@ export async function cleanExpiredSessions(): Promise<void> {
 }
 
 export function setSessionCookie(cookies: Cookies, sessionId: string, expiresAt: Date): void {
+    const maxAge = Math.floor((expiresAt.getTime() - Date.now()) / 1000);
     cookies.set(SESSION_COOKIE_NAME, sessionId, {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: expiresAt
+        sameSite: 'lax',
+        expires: expiresAt,
+        maxAge: maxAge > 0 ? maxAge : undefined
     });
 }
 
